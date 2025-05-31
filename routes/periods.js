@@ -24,20 +24,27 @@ router.get('/', authorize('admin'), async (req, res) => {
 
 
 router.post('/', authorize('admin'), async (req, res) => {
-  const { period, members } = req.body;
+  const { period } = req.body;
+  const userId = req.user?.id; // token'dan gelen kullanıcı bilgisi
 
-  if (!period || !members || !Array.isArray(members) || members.length === 0) {
-    return res.status(400).json({ error: 'Period ve en az bir member zorunludur.' });
+  if (!period || !userId) {
+    return res.status(400).json({ error: 'Period ve geçerli token zorunludur.' });
   }
 
   try {
-    const newPeriod = new Period({ period, members });
+    const newPeriod = new Period({
+      period,
+      members: [userId]  // sadece token'dan gelen kullanıcıyı ekle
+    });
+
     await newPeriod.save();
     res.status(201).json(newPeriod);
   } catch (err) {
+    console.error('Period kaydı hatası:', err)
     res.status(500).json({ error: 'Kaydetme hatası' });
   }
 });
+
 
 
 router.delete('/:id', authorize('admin'), async (req, res) => {
